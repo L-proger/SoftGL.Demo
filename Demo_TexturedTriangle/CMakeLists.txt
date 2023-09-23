@@ -7,6 +7,11 @@ PRIVATE
     app.cpp
 )
 
+target_compile_definitions(Demo_TexturedTriangle
+PRIVATE
+    RESOURCES_DIR="${CMAKE_CURRENT_LIST_DIR}/../Resources"
+)
+
 target_link_libraries(Demo_TexturedTriangle
 PRIVATE
     SoftGL

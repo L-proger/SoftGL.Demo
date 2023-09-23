@@ -41,8 +41,8 @@ void DrawMesh(BlockRasterizer* rasterizer, IMesh* mesh){
 	}
 }
 
-static constexpr size_t sx = 1600;
-static constexpr size_t sy = 900;
+static constexpr size_t sx = 320;
+static constexpr size_t sy = 240;
 
 alignas(32) MipChain<sizeof(uint32_t), sx, sy, 0> bb_data;
 alignas(32) MipChain<sizeof(float), sx, sy, 0> db_data;
@@ -54,20 +54,21 @@ alignas(32) MipChain<sizeof(float), sx, sy, 0> db_data;
 
 int main()
 {
-	auto input = Input::Instance();
-	auto keyboard = input->keyboards()[1];
-	auto mouse = input->mice()[0];
 
-	auto tex_normal = texture_utils::LoadTexture(R"(D:\L\development\Resources\Floors\normal.bmp)");
-	auto tex_diffuse = texture_utils::LoadTexture(R"(D:\L\development\Resources\Floors\diffuse.bmp)");
-	auto tex_ao = texture_utils::LoadTexture(R"(D:\L\development\Resources\Floors\ao.bmp)");
+	std::string resourcesDir = RESOURCES_DIR;
+	auto input = Input::Instance();
+
+	auto tex_normal = texture_utils::LoadTexture(resourcesDir + "/normal.bmp");
+	auto tex_diffuse = texture_utils::LoadTexture(resourcesDir + "/diffuse.bmp");
+	auto tex_ao = texture_utils::LoadTexture(resourcesDir + "ao.bmp");
 
 	Game_object go;
 	Camera camera(&go);
 	camera.SetZFar(30);
+	camera.SetAspect((float)sx / (float)sy);
 	CameraController camController(&camera);
 
-	go.transform.SetLocalPosition(float3(0.0f, 1.0f, -10.0f));
+	go.transform.SetLocalPosition(float3(0.0f, 0.0f, -10.0f));
 
 	RenderWindow* wnd = new RenderWindow();
 	wnd->SetSize(sx, sy);
@@ -84,15 +85,17 @@ int main()
 	StaticTexture<decltype(&db_data)> depthBuffer(&db_data, desc);
 
 	Mesh<1> plane;
-	static_buffer<Vertex, PlaneGenerator<Vertex, indices_t>::VertexCount> quad_vb;
-	static_buffer<indices_t, PlaneGenerator<Vertex, indices_t>::IndexCount> quad_ib;
+	static_buffer<Vertex, CubeGenerator<Vertex, indices_t>::VertexCount> quad_vb;
+	static_buffer<indices_t, CubeGenerator<Vertex, indices_t>::IndexCount> quad_ib;
 	plane.vertexBuffer = &quad_vb;
 	plane.submeshes[0] = &quad_ib;
 
 
-	PlaneGenerator<Vertex, indices_t>::Generate(&plane);
+	CubeGenerator<Vertex, indices_t>::Generate(&plane);
 
 	BlockRasterizer rasterizer;
+
+
 
 	StaticInputLayout<3> layout;
 	layout.elements = {
@@ -138,10 +141,13 @@ int main()
 		texture_utils::fill<float>(&depthBuffer, 1.0f);
 
 		//setup material
-		vs.mWorld = lm::mul(matrix4x4Scale<float>(10, 10, 10), matrix4x4RotationQuaternion(Quaternion_f::angleAxis(-3.1415f/2*0, float3(1.0f,0.0f,0.0f))));
+		vs.mWorld = lm::mul(matrix4x4Scale<float>(1, 1, 1), matrix4x4RotationQuaternion(Quaternion_f::angleAxis(-3.1415f/2*0, float3(1.0f,0.0f,0.0f))));
 		vs.mView = camera.world_to_camera_matrix();
 		vs.mProj = camera.GetProjection();
 		
+		DrawMesh(&rasterizer, &plane);
+
+		vs.mWorld = lm::mul(lm::matrix4x4Translation(0.0f, 3.0f, 0.0f),  lm::mul(matrix4x4Scale<float>(1, 1, 1), matrix4x4RotationQuaternion(Quaternion_f::angleAxis(-3.1415f / 2 * 0, float3(1.0f, 0.0f, 0.0f)))));
 		DrawMesh(&rasterizer, &plane);
 
 		//present
