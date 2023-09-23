@@ -4,3 +4,6 @@
 [submodule "Dependencies/LMath"]
 	path = Dependencies/LMath
 	url = https://github.com/L-proger/LMath.git
+[submodule "Dependencies/LFramework"]
+	path = Dependencies/LFramework
+	url = https://github.com/L-proger/LFramework.git

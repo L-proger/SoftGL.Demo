@@ -1,39 +1,36 @@
 #define WIN32_LEAN_AND_MEAN
-#include "LString.h"
-#include "Buffer.h"
-#include "IRenderWindow.h"
-#include "Texture.h"
-#include "BlockRasterizer.h"
-#include "RenderWindow.h"
-#include "Vertex.h"
-#include "texture_utils.h"
-#include "VSDefault.h"
-#include "PSDefault.h"
-#include "StaticBuffer.h"
-#include <array>
-#include "lmath.h"
-#include "FpsCounter.h"
-#include "transform.h"
-#include "gameobject.h"
-#include "Camera.h"
-#include "Input.h"
-#include "camera_controller.h"
-#include "stopwatch.h"
-#include "mesh.h"
-#include "cube_generator.h"
-#include "plane_generator.h"
-#include "PsNormalMap.h"
+#include <SoftGL/LString.h>
+#include <SoftGL/Buffer.h>
+#include <SoftGL/IRenderWindow.h>
+#include <SoftGL/Texture.h>
+#include <SoftGL/BlockRasterizer.h>
+#include <SoftGL/Platform/Windows/RenderWindow.h>
+#include <SoftGL/Vertex.h>
+#include <SoftGL/texture_utils.h>
+#include <SoftGL/VSDefault.h>
+#include <SoftGL/PSDefault.h>
+#include <SoftGL/StaticBuffer.h>
+
+#include <LMath/lmath.h>
+#include <SoftGL/Engine/FpsCounter.h>
+#include <SoftGL/Engine/transform.h>
+#include <SoftGL/Engine/gameobject.h>
+#include <SoftGL/Engine/Camera.h>
+
+#include <SoftGL/Engine/camera_controller.h>
+#include <SoftGL/Engine/mesh.h>
+#include <SoftGL/Engine/cube_generator.h>
+#include <SoftGL/Engine/plane_generator.h>
+#include <SoftGL/Engine/PsNormalMap.h>
+#include <SoftGL/StaticTexture.h>
+#include <SoftGL/Engine/shaders/textured_no_lit.h>
+
 #include <iostream>
-#include "StaticTexture.h"
 #include <cstdint>
-#include "shaders/textured_no_lit.h"
+#include <array>
 #include <windows.h>
 #include <WinBase.h>
 
-#pragma comment(lib, "lframework.lib")
-#pragma comment(lib, "softgl.lib")
-
-using namespace LFramework;
 
 void DrawMesh(BlockRasterizer* rasterizer, IMesh* mesh){
 	rasterizer->SetVertexBuffer(mesh->GetVertexBuffer(), 0, mesh->GetVertexBuffer()->ItemSize());
@@ -70,7 +67,7 @@ int main()
 	camera.SetZFar(30);
 	CameraController camController(&camera);
 
-	go.transform.SetLocalPosition(float3(0, 1, -10.0f));
+	go.transform.SetLocalPosition(float3(0.0f, 1.0f, -10.0f));
 
 	RenderWindow* wnd = new RenderWindow();
 	wnd->SetSize(sx, sy);
@@ -119,7 +116,7 @@ int main()
 	rasterizer.SetPixelShader(&ps);
 	
 	FpsCounter<40> fps;
-	Stopwatch sw;
+	//Stopwatch sw;
 	float threadTime = 0;
 	int frames = 0;
 	float angle = 0.0f;
@@ -141,7 +138,7 @@ int main()
 		texture_utils::fill<float>(&depthBuffer, 1.0f);
 
 		//setup material
-		vs.mWorld = lm::mul(matrix4x4_scale<float>(10, 10, 10), matrix4x4_rotation(Quaternion_f::angle_axis(-3.1415f/2*0, float3(1,0,0))));
+		vs.mWorld = lm::mul(matrix4x4Scale<float>(10, 10, 10), matrix4x4RotationQuaternion(Quaternion_f::angleAxis(-3.1415f/2*0, float3(1.0f,0.0f,0.0f))));
 		vs.mView = camera.world_to_camera_matrix();
 		vs.mProj = camera.GetProjection();
 		
