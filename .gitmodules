@@ -1,0 +1,6 @@
+[submodule "Dependencies/SoftGL"]
+	path = Dependencies/SoftGL
+	url = https://github.com/L-proger/SoftGL.git
+[submodule "Dependencies/LMath"]
+	path = Dependencies/LMath
+	url = https://github.com/L-proger/LMath.git
