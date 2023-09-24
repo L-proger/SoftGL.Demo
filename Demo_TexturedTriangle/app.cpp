@@ -31,6 +31,8 @@
 #include <windows.h>
 #include <WinBase.h>
 
+#include "SoftGL/ImageDataAccessorR8G8B8.h"
+#include "SoftGL/ImageDataAccessorR5G6B5.h"
 
 void DrawMesh(BlockRasterizer* rasterizer, IMesh* mesh){
 	rasterizer->SetVertexBuffer(mesh->GetVertexBuffer(), 0, mesh->GetVertexBuffer()->ItemSize());
@@ -44,7 +46,8 @@ void DrawMesh(BlockRasterizer* rasterizer, IMesh* mesh){
 static constexpr size_t sx = 320;
 static constexpr size_t sy = 240;
 
-alignas(32) MipChain<sizeof(uint32_t), sx, sy, 0> bb_data;
+alignas(32) MipChain<sizeof(uint32_t), sx, sy, 0> bb32_data;
+alignas(32) MipChain<sizeof(uint16_t), sx, sy, 0> bb16_data;
 alignas(32) MipChain<sizeof(float), sx, sy, 0> db_data;
 
 /*bool isAvxSupportedByWindows() {
@@ -60,7 +63,7 @@ int main()
 
 	auto tex_normal = texture_utils::LoadTexture(resourcesDir + "/normal.bmp");
 	auto tex_diffuse = texture_utils::LoadTexture(resourcesDir + "/diffuse.bmp");
-	auto tex_ao = texture_utils::LoadTexture(resourcesDir + "ao.bmp");
+	auto tex_ao = texture_utils::LoadTexture(resourcesDir + "/ao.bmp");
 
 	Game_object go;
 	Camera camera(&go);
@@ -75,14 +78,21 @@ int main()
 	wnd->SetCaption("SoftGL");
 	wnd->CenterWindow();
 
-	TextureDescription desc;
-	desc.Width = sx;
-	desc.Height = sy;
-	desc.BytesPerPixel = sizeof(uint32_t);
-	desc.MipCount = bb_data.MipsCount;
+	TextureDescription desc32;
+	desc32.Width = sx;
+	desc32.Height = sy;
+	desc32.BytesPerPixel = sizeof(uint32_t);
+	desc32.MipCount = bb32_data.MipsCount;
 
-	StaticTexture<decltype(&bb_data)> backBuffer(&bb_data, desc);
-	StaticTexture<decltype(&db_data)> depthBuffer(&db_data, desc);
+	TextureDescription desc16;
+	desc16.Width = sx;
+	desc16.Height = sy;
+	desc16.BytesPerPixel = sizeof(uint16_t);
+	desc16.MipCount = bb16_data.MipsCount;
+
+	StaticTexture<decltype(&bb32_data)> backBuffer32(&bb32_data, desc32);
+	StaticTexture<decltype(&bb16_data)> backBuffer16(&bb16_data, desc16);
+	StaticTexture<decltype(&db_data)> depthBuffer(&db_data, desc32);
 
 	Mesh<1> plane;
 	static_buffer<Vertex, CubeGenerator<Vertex, indices_t>::VertexCount> quad_vb;
@@ -107,7 +117,7 @@ int main()
 	rasterizer.SetInputLayout(&layout);
 	rasterizer.SetPrimitiveType(PT_TRIANGLE_LIST);
 
-	rasterizer.setColorBuffer(&backBuffer);
+	rasterizer.setColorBuffer(&backBuffer16);
 	rasterizer.setDepthBuffer(&depthBuffer);
 
 	auto vs = VSDefault();
@@ -137,7 +147,7 @@ int main()
 		camController.Tick(fps.GetFrameTimeSeconds());
 
 		//clear render targets
-		texture_utils::fill<uint32_t>(&backBuffer, 0x00ff0000 );//0x00232327
+		texture_utils::fill<uint16_t>(&backBuffer16, 0x1f );//0x00232327
 		texture_utils::fill<float>(&depthBuffer, 1.0f);
 
 		//setup material
@@ -146,12 +156,14 @@ int main()
 		vs.mProj = camera.GetProjection();
 		
 		DrawMesh(&rasterizer, &plane);
-
+		
 		vs.mWorld = lm::mul(lm::matrix4x4Translation(0.0f, 3.0f, 0.0f),  lm::mul(matrix4x4Scale<float>(1, 1, 1), matrix4x4RotationQuaternion(Quaternion_f::angleAxis(-3.1415f / 2 * 0, float3(1.0f, 0.0f, 0.0f)))));
 		DrawMesh(&rasterizer, &plane);
 
+		texture_utils::copy<ImageDataAccessorR5G6B5, ImageDataAccessorR8G8B8>(&backBuffer16, &backBuffer32);
+
 		//present
-		wnd->Present(&backBuffer);
+		wnd->Present(&backBuffer32);
 
 		
 		angle += fps.GetFrameTimeSeconds();
